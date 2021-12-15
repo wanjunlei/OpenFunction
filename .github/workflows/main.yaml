@@ -79,6 +79,11 @@ jobs:
         with:
           go-version: 1.16.x
 
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.2.0
+        with:
+          config: .github/workflows/kind/kind.yaml
+
       - uses: actions/cache@v2
         with:
           path: ~/go/pkg/mod
@@ -103,11 +108,6 @@ jobs:
         run: |
           docker build . -t ${ REPO }/openfunction:${{ env.TAG }} -f Dockerfile --build-arg GOPROXY="https://proxy.golang.org"
           docker push ${ REPO }/openfunction:${{ env.TAG }}
-
-      - name: Create kind cluster
-        uses: helm/kind-action@v1.2.0
-        with:
-          config: .github/workflows/kind/kind.yaml
 
       - name: Install OpenFunction
         run: |
