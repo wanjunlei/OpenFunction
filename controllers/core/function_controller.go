@@ -291,18 +291,18 @@ func (r *FunctionReconciler) deleteOldBuilder(fn *openfunction.Function) error {
 		return builders.Items[i].CreationTimestamp.Time.After(builders.Items[j].CreationTimestamp.Time)
 	})
 
-	var failedBuildersHistoryLimit int32 = 1
-	if fn.Spec.Build != nil && fn.Spec.Build.FailedBuildersHistoryLimit != nil {
-		failedBuildersHistoryLimit = *fn.Spec.Build.FailedBuildersHistoryLimit
+	var failedBuildsHistoryLimit int32 = 1
+	if fn.Spec.Build != nil && fn.Spec.Build.FailedBuildsHistoryLimit != nil {
+		failedBuildsHistoryLimit = *fn.Spec.Build.FailedBuildsHistoryLimit
 	}
 
-	var successfulBuilderHistoryLimit int32 = 0
-	if fn.Spec.Build != nil && fn.Spec.Build.SuccessfulBuilderHistoryLimit != nil {
-		successfulBuilderHistoryLimit = *fn.Spec.Build.SuccessfulBuilderHistoryLimit
+	var successfulBuildsHistoryLimit int32 = 0
+	if fn.Spec.Build != nil && fn.Spec.Build.SuccessfulBuildsHistoryLimit != nil {
+		successfulBuildsHistoryLimit = *fn.Spec.Build.SuccessfulBuildsHistoryLimit
 	}
 
-	var failedBuildersHistoryNum int32 = 0
-	var successfulBuilderHistoryNum int32 = 0
+	var failedBuildsHistoryNum int32 = 0
+	var successfulBuildsHistoryNum int32 = 0
 	for _, item := range builders.Items {
 		builder := item
 		if !builder.Status.IsCompleted() {
@@ -310,13 +310,13 @@ func (r *FunctionReconciler) deleteOldBuilder(fn *openfunction.Function) error {
 		}
 
 		if builder.Status.IsSucceeded() {
-			successfulBuilderHistoryNum++
-			if successfulBuilderHistoryNum <= successfulBuilderHistoryLimit {
+			successfulBuildsHistoryNum++
+			if successfulBuildsHistoryNum <= successfulBuildsHistoryLimit {
 				continue
 			}
 		} else {
-			failedBuildersHistoryNum++
-			if failedBuildersHistoryNum <= failedBuildersHistoryLimit {
+			failedBuildsHistoryNum++
+			if failedBuildsHistoryNum <= failedBuildsHistoryLimit {
 				continue
 			}
 		}

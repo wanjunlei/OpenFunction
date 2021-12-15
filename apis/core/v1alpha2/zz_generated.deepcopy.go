@@ -75,13 +75,13 @@ func (in *BuildImpl) DeepCopyInto(out *BuildImpl) {
 		*out = new(metav1.Duration)
 		**out = **in
 	}
-	if in.SuccessfulBuilderHistoryLimit != nil {
-		in, out := &in.SuccessfulBuilderHistoryLimit, &out.SuccessfulBuilderHistoryLimit
+	if in.SuccessfulBuildsHistoryLimit != nil {
+		in, out := &in.SuccessfulBuildsHistoryLimit, &out.SuccessfulBuildsHistoryLimit
 		*out = new(int32)
 		**out = **in
 	}
-	if in.FailedBuildersHistoryLimit != nil {
-		in, out := &in.FailedBuildersHistoryLimit, &out.FailedBuildersHistoryLimit
+	if in.FailedBuildsHistoryLimit != nil {
+		in, out := &in.FailedBuildsHistoryLimit, &out.FailedBuildsHistoryLimit
 		*out = new(int32)
 		**out = **in
 	}

@@ -112,11 +112,11 @@ type BuildImpl struct {
 
 	// The number of successful completed builders to retain, default is 0.
 	// +optional
-	SuccessfulBuilderHistoryLimit *int32 `json:"successfulBuildersHistoryLimit,omitempty"`
+	SuccessfulBuildsHistoryLimit *int32 `json:"successfulBuildsHistoryLimit,omitempty"`
 
 	// The number of failed completed builders to retain, default is 1.
 	// +optional
-	FailedBuildersHistoryLimit *int32 `json:"failedBuildersHistoryLimit,omitempty"`
+	FailedBuildsHistoryLimit *int32 `json:"failedBuildsHistoryLimit,omitempty"`
 	// The maximum time to retain completed builder, default is 0, means ever.
 	// +optional
 	BuilderMaxAge *metav1.Duration `json:"builderMaxAge,omitempty"`

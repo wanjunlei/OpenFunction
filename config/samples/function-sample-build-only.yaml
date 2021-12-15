@@ -9,8 +9,8 @@ spec:
     name: push-secret
   #port: 8080 # default to 8080
   build:
-    successfulBuildersHistoryLimit: 2
-    failedBuildersHistoryLimit: 3
+    successfulBuildsHistoryLimit: 2
+    failedBuildsHistoryLimit: 3
     timeout: 10m
     builder: openfunction/builder:v1
     env:

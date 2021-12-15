@@ -114,8 +114,9 @@ func createFunction(file string) (*openfunction.Function, error) {
 	}
 
 	fn.Namespace = namespace
-	fn.Spec.Image = fn.Spec.Image[0:strings.Index(fn.Spec.Image, ":")]
-	fn.Spec.Image = fmt.Sprintf("%s:%s", fn.Spec.Image, tag)
+
+	fn.Spec.Image = fn.Spec.Image[strings.LastIndex(fn.Spec.Image, "/"):strings.Index(fn.Spec.Image, ":")]
+	fn.Spec.Image = fmt.Sprintf("%s%s:%s", repo, fn.Spec.Image, tag)
 
 	return fn, err
 }

@@ -20,7 +20,7 @@ kubectl apply -f config/samples/function-kafka-quick.yaml
 
 # Install OpenFunction
 kubectl create -f config/bundle.yaml
-kubectl patch deployments.apps -n openfunction openfunction-controller-manager -p "{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"openfunction\",\"image\":\"openfunctiondev/openfunction:$1\",\"resources\":null}]}}}}"
+kubectl patch deployments.apps -n openfunction openfunction-controller-manager -p "{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"openfunction\",\"image\":\"$1\",\"resources\":null}]}}}}"
 
 # Wait for all to be ready
 sleep 60

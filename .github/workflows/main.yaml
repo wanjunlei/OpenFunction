@@ -35,7 +35,6 @@ on:
       - 'Makefile'
 env:
   TAG: action-${{ github.run_number }}
-  REGISTRY_SERVER: https://index.docker.io/v1/
 
 jobs:
   test:
@@ -70,10 +69,11 @@ jobs:
       - name: Run verify crds test
         run:  make verify
 
-  docker_build:
+  e2e_test:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    name: Build
+    name: E2E Tests
+    needs: docker_build
     steps:
       - name: Install Go
         uses: actions/setup-go@v2
@@ -90,33 +90,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v1
-        with:
-          registry: ${{ env.REGISTRY_SERVER }}
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - name: Install Registry
+        run: |
+          kubectl apply -f test/e2e/data/registry.yaml
+          kubectl -n registry rollout status deployment registry --timeout=1m
+
+      - name: Set repository environment
+        run: |
+          NODE_IP=$(kubectl get nodes -o jsonpath={.items[0].status.addresses[0].address})
+          echo "REPO=$NODE_IP:32168/" >> $GITHUB_ENV
 
       - name: Build and Push image
         run: |
-          docker build . -t openfunctiondev/openfunction:${{ env.TAG }} -f Dockerfile --build-arg GOPROXY="https://proxy.golang.org"
-          docker push openfunctiondev/openfunction:${{ env.TAG }}
-
-  e2e_test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    name: E2E Tests
-    needs: docker_build
-    steps:
-      - name: Install Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.16.x
-
-      - name: Checkout code
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
+          docker build . -t ${ REPO }/openfunction:${{ env.TAG }} -f Dockerfile --build-arg GOPROXY="https://proxy.golang.org"
+          docker push ${ REPO }/openfunction:${{ env.TAG }}
 
       - name: Create kind cluster
         uses: helm/kind-action@v1.2.0
@@ -126,19 +113,13 @@ jobs:
       - name: Install OpenFunction
         run: |
           chmod +x "${GITHUB_WORKSPACE}/.github/workflows/install.sh"
-          bash "${GITHUB_WORKSPACE}"/.github/workflows/install.sh ${{ env.TAG }}
-
-      - name: Create push-secret
-        run: |
-          kubectl create secret docker-registry push-secret \
-              --docker-server=${{ env.REGISTRY_SERVER }} \
-              --docker-username=${{ secrets.DOCKERHUB_USERNAME }} \
-              --docker-password=${{ secrets.DOCKERHUB_PASSWORD }} 
+          bash "${GITHUB_WORKSPACE}"/.github/workflows/install.sh ${ REPO }/openfunction:${{ env.TAG }}
 
       - name: Test
         run: |
           export TAG=${{ env.TAG }}
           export TEST_NAMESPACE=default
+          export TEST_IMAGE_REPO=${ REPO }
           make e2e-test
 
       - name: Output debug info

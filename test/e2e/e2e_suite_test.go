@@ -28,6 +28,7 @@ var (
 	clientSet  *kubernetes.Clientset
 	restConfig *rest.Config
 
+	repo      string
 	tag       string
 	namespace string
 )
@@ -48,6 +49,11 @@ var _ = BeforeSuite(func(done Done) {
 	_ = kedav1alpha1.AddToScheme(scheme)
 	_ = openfunctionevent.AddToScheme(scheme)
 	_ = shipwrightv1alpha1.AddToScheme(scheme)
+
+	repo = os.Getenv("TEST_IMAGE_REPO")
+	if repo == "" {
+		repo = "openfunctiondev"
+	}
 
 	tag = os.Getenv("TAG")
 	if tag == "" {

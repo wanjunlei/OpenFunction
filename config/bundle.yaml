@@ -8917,7 +8917,7 @@ spec:
                       type: string
                     description: Environment variables to pass to the builder.
                     type: object
-                  failedBuildersHistoryLimit:
+                  failedBuildsHistoryLimit:
                     description: The number of failed completed builders to retain,
                       default is 1.
                     format: int32
@@ -8983,7 +8983,7 @@ spec:
                     required:
                     - url
                     type: object
-                  successfulBuildersHistoryLimit:
+                  successfulBuildsHistoryLimit:
                     description: The number of successful completed builders to retain,
                       default is 0.
                     format: int32
