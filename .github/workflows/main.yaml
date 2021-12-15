@@ -102,7 +102,7 @@ jobs:
       - name: Set repository environment
         run: |
           NODE_IP=$(kubectl get nodes -o jsonpath={.items[0].status.addresses[0].address})
-          echo "REPO=$NODE_IP:32168/" >> $GITHUB_ENV
+          echo "REPO=$NODE_IP:32168" >> $GITHUB_ENV
 
       - name: Build and Push image
         run: |
