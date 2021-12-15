@@ -104,7 +104,7 @@ jobs:
 
       - name: Set docker
         run: |
-          cat <<EOF >/etc/docker/daemon.json
+          sudo cat <<EOF >/etc/docker/daemon.json
           {
             "insecure-registries":[
                "\"$REPO\"",   
