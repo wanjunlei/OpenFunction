@@ -111,7 +111,7 @@ jobs:
             ]
           }
           EOF
-          systemctl restart docker
+          sudo systemctl restart docker
 
       - name: Build and Push image
         run: |
