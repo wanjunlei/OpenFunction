@@ -33,8 +33,6 @@ on:
       - 'Dockerfile'
       - 'main.go'
       - 'Makefile'
-env:
-  TAG: action-${{ github.run_number }}
 
 jobs:
   test:
@@ -104,19 +102,29 @@ jobs:
           NODE_IP=$(kubectl get nodes -o jsonpath={.items[0].status.addresses[0].address})
           echo "REPO=$NODE_IP:32168" >> $GITHUB_ENV
 
+      - name: Set docker
+        run: |
+          cat <<EOF >/etc/docker/daemon.json
+          {
+            "insecure-registries":[
+               "\"$REPO\"",   
+            ]
+          }
+          EOF
+          systemctl restart docker
+
       - name: Build and Push image
         run: |
-          docker build . -t "$REPO"/openfunction:${{ env.TAG }} -f Dockerfile --build-arg GOPROXY="https://proxy.golang.org"
-          docker push "$REPO"/openfunction:${{ env.TAG }}
+          docker build . -t "$REPO"/openfunction:latest -f Dockerfile --build-arg GOPROXY="https://proxy.golang.org"
+          docker push "$REPO"/openfunction:latest
 
       - name: Install OpenFunction
         run: |
           chmod +x "${GITHUB_WORKSPACE}/.github/workflows/install.sh"
-          bash "${GITHUB_WORKSPACE}"/.github/workflows/install.sh "$REPO"/openfunction:${{ env.TAG }}
+          bash "${GITHUB_WORKSPACE}"/.github/workflows/install.sh "$REPO"/openfunction:latest
 
       - name: Test
         run: |
-          export TAG=${{ env.TAG }}
           export TEST_NAMESPACE=default
           export TEST_IMAGE_REPO="$REPO"
           make e2e-test
