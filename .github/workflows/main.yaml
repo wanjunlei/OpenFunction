@@ -76,8 +76,8 @@ jobs:
         run: |
           mkdir certs
           openssl req -x509 -days 3650 -subj '/CN=registry.local/' -nodes -newkey rsa:2048 -keyout certs/domain.key -out certs/domain.crt
-          sudo mkdir -p  /etc/docker/certs.d/registry.local
-          cp cp certs/domain.crt  /etc/docker/certs.d/registry.local/ca.crt
+          mkdir -p  /etc/docker/certs.d/registry.local
+          cp certs/domain.crt  /etc/docker/certs.d/registry.local/ca.crt
           NODE_IP=$(kubectl get nodes -o jsonpath={.items[0].status.addresses[0].address})
           echo "$NODE_IP registry.local" >> /etc/hosts
           
