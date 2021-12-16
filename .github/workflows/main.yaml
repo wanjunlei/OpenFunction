@@ -101,6 +101,7 @@ jobs:
           SERVICE_IP=$(kubectl get svc -n registry registry -o jsonpath={.spec.clusterIP})
           echo "SERVICE_IP=$SERVICE_IP" >> $GITHUB_ENV
           sudo bash -c "echo '{\"insecure-registries\":[\"$NODE_IP:32168\", \"$SERVICE_IP:32168\"]}' >/etc/docker/daemon.json"
+          sudo systemctl daemon-reload
           sudo systemctl restart docker
 
       - name: Build and Push image
