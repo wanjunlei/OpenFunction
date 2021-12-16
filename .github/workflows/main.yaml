@@ -87,11 +87,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Create kind cluster
-        uses: helm/kind-action@v1.2.0
-        with:
-          config: .github/workflows/kind/kind.yaml
-
       - name: Install registry
         run: |
           HOST_IP=$(hostname -i)
@@ -112,6 +107,11 @@ jobs:
         run: |
           docker build . -t registry.local:5000/openfunction/openfunction:latest -f Dockerfile --build-arg GOPROXY="https://proxy.golang.org"
           docker push registry.local:5000/openfunction/openfunction:latest
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.2.0
+        with:
+          config: .github/workflows/kind/kind.yaml
 
       - name: Install OpenFunction
         run: |
