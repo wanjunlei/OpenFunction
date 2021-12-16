@@ -71,16 +71,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     name: E2E Tests
-    services:
-      registry:
-        image: registry:2
-        ports:
-          - 5000:5000
     steps:
       - name: Set docker
         run: |
           sudo mkdir -p  /etc/docker/certs.d/registry.registry
-#           sudo echo "{\"insecure-registries\":["\"$REPO\""]}" >/etc/docker/daemon.json
           sudo systemctl restart docker
       - name: Install Go
         uses: actions/setup-go@v2
