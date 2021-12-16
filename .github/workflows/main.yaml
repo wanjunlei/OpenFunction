@@ -72,26 +72,6 @@ jobs:
     timeout-minutes: 30
     name: E2E Tests
     steps:
-      - name: Set docker
-        run: |
-          mkdir certs
-          openssl req -x509 -days 3650 -subj '/CN=registry.local/' -nodes -newkey rsa:2048 -keyout certs/domain.key -out certs/domain.crt
-          sudo mkdir -p  /etc/docker/certs.d/registry.local
-          sudo cp certs/domain.crt  /etc/docker/certs.d/registry.local/ca.crt
-          NODE_IP=$(kubectl get nodes -o jsonpath={.items[0].status.addresses[0].address})
-          sudo echo "$NODE_IP registry.local" >> /etc/hosts
-          
-          docker run -d \
-            --restart=always \
-            --name registry \
-            -v "$(pwd)"/certs:/certs \
-            -v /mnt/registry:/var/lib/registry \
-            -e REGISTRY_HTTP_ADDR=0.0.0.0:443 \
-            -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt \
-            -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key \
-            -p 443:443 \
-            registry:2
-
       - name: Install Go
         uses: actions/setup-go@v2
         with:
@@ -111,6 +91,26 @@ jobs:
         uses: helm/kind-action@v1.2.0
         with:
           config: .github/workflows/kind/kind.yaml
+
+      - name: Install registry
+        run: |
+          mkdir certs
+          openssl req -x509 -days 3650 -subj '/CN=registry.local/' -nodes -newkey rsa:2048 -keyout certs/domain.key -out certs/domain.crt
+          sudo mkdir -p  /etc/docker/certs.d/registry.local
+          sudo cp certs/domain.crt  /etc/docker/certs.d/registry.local/ca.crt
+          NODE_IP=$(kubectl get nodes -o jsonpath={.items[0].status.addresses[0].address})
+          sudo echo "$NODE_IP registry.local" >> /etc/hosts
+
+          docker run -d \
+            --restart=always \
+            --name registry \
+            -v "$(pwd)"/certs:/certs \
+            -v /mnt/registry:/var/lib/registry \
+            -e REGISTRY_HTTP_ADDR=0.0.0.0:443 \
+            -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt \
+            -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key \
+            -p 443:443 \
+            registry:2
 
       - name: Build and Push image
         run: |
