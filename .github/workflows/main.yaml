@@ -94,6 +94,7 @@ jobs:
 
       - name: Install registry
         run: |
+          echo "x509ignoreCN=0" >> $GITHUB_ENV
           mkdir certs
           openssl req -x509 -days 3650 -subj '/CN=registry.local/' -nodes -newkey rsa:2048 -keyout certs/domain.key -out certs/domain.crt
           sudo mkdir -p  /etc/docker/certs.d/registry.local
