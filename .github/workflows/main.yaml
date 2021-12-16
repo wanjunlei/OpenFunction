@@ -74,8 +74,12 @@ jobs:
     steps:
       - name: Set docker
         run: |
-          sudo mkdir -p  /etc/docker/certs.d/registry.registry
-          sudo systemctl restart docker
+          openssl req -x509 -days 3650 -subj '/CN=registry.local/' -nodes -newkey rsa:2048 -keyout certs/domain.key -out certs/domain.crt
+          sudo mkdir -p  /etc/docker/certs.d/registry.local
+          cp cp certs/domain.crt  /etc/docker/certs.d/registry.local/ca.crt
+          NODE_IP=$(kubectl get nodes -o jsonpath={.items[0].status.addresses[0].address})
+          echo "$NODE_IP registry.local" >> /etc/hosts
+
       - name: Install Go
         uses: actions/setup-go@v2
         with:
@@ -96,11 +100,10 @@ jobs:
         with:
           config: .github/workflows/kind/kind.yaml
 
-      - name: Set repository environment
+      - name: Build and Push image
         run: |
-          NODE_IP=$(kubectl get nodes -o jsonpath={.items[0].status.addresses[0].address})
-          echo "REPO=$NODE_IP:5000" >> $GITHUB_ENV
-
+          docker build . -t registry.local/openfunction:latest -f Dockerfile --build-arg GOPROXY="https://proxy.golang.org"
+          docker push registry.local/openfunction:latest
 
       - name: Install OpenFunction
         run: |
