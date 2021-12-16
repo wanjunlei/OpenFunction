@@ -121,6 +121,9 @@ jobs:
             -p 443:443 \
             registry:2
 
+      - name: Setup Debug Session
+        uses: csexton/debugger-action@master
+
       - name: Build and Push image
         run: |
           docker build . -t registry.local:443/openfunction/openfunction:latest -f Dockerfile --build-arg GOPROXY="https://proxy.golang.org"
@@ -130,9 +133,6 @@ jobs:
         run: |
           chmod +x "${GITHUB_WORKSPACE}/.github/workflows/install.sh"
           bash "${GITHUB_WORKSPACE}"/.github/workflows/install.sh "$SERVICE_IP":32168/openfunction/openfunction:latest
-
-      - name: Setup Debug Session
-        uses: csexton/debugger-action@master
 
       - name: Test
         run: |
