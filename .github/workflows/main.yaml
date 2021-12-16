@@ -74,11 +74,23 @@ jobs:
     steps:
       - name: Set docker
         run: |
+          mkdir certs
           openssl req -x509 -days 3650 -subj '/CN=registry.local/' -nodes -newkey rsa:2048 -keyout certs/domain.key -out certs/domain.crt
           sudo mkdir -p  /etc/docker/certs.d/registry.local
           cp cp certs/domain.crt  /etc/docker/certs.d/registry.local/ca.crt
           NODE_IP=$(kubectl get nodes -o jsonpath={.items[0].status.addresses[0].address})
           echo "$NODE_IP registry.local" >> /etc/hosts
+          
+          docker run -d \
+            --restart=always \
+            --name registry \
+            -v "$(pwd)"/certs:/certs \
+            -v /mnt/registry:/var/lib/registry \
+            -e REGISTRY_HTTP_ADDR=0.0.0.0:443 \
+            -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt \
+            -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key \
+            -p 443:443 \
+            registry:2
 
       - name: Install Go
         uses: actions/setup-go@v2
@@ -102,13 +114,13 @@ jobs:
 
       - name: Build and Push image
         run: |
-          docker build . -t registry.local/openfunction:latest -f Dockerfile --build-arg GOPROXY="https://proxy.golang.org"
-          docker push registry.local/openfunction:latest
+          docker build . -t registry.local:443/openfunction:latest -f Dockerfile --build-arg GOPROXY="https://proxy.golang.org"
+          docker push registry.local:443/openfunction:latest
 
       - name: Install OpenFunction
         run: |
           chmod +x "${GITHUB_WORKSPACE}/.github/workflows/install.sh"
-          bash "${GITHUB_WORKSPACE}"/.github/workflows/install.sh "$REPO"/openfunction:latest
+          bash "${GITHUB_WORKSPACE}"/.github/workflows/install.sh registry.local:443/openfunction:latest
 
       - name: Test
         run: |
