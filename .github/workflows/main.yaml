@@ -95,7 +95,7 @@ jobs:
       - name: Install registry
         run: |
           HOST_IP=$(hostname -i)
-          sudo bash -c "echo HOST_IP registry.local >> /etc/hosts"
+          sudo bash -c "echo $HOST_IP registry.local >> /etc/hosts"
           sudo bash -c "echo '{\"insecure-registries\":[\"registry.local:5000\"]}' >/etc/docker/daemon.json"
           sudo systemctl daemon-reload
           sudo systemctl restart docker
@@ -106,8 +106,6 @@ jobs:
             -v /mnt/registry:/var/lib/registry \
             -p 5000:5000 \
             registry:2
-      - name: Setup Debug Session
-        uses: csexton/debugger-action@master
 
       - name: Build and Push image
         run: |
