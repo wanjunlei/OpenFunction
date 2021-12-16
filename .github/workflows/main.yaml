@@ -87,36 +87,36 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install registry
-        run: |
-          HOST_IP=$(hostname -i)
-          sudo bash -c "echo $HOST_IP registry.local >> /etc/hosts"
-          sudo bash -c "echo '{\"insecure-registries\":[\"registry.local:5000\"]}' >/etc/docker/daemon.json"
-          sudo bash -c "echo DOCKER_OPTS=\"--config-file=/etc/docker/daemon.json\" >> /etc/default/docker"
-          sudo systemctl daemon-reload
-          sudo systemctl restart docker
+#      - name: Install registry
+#        run: |
+#          HOST_IP=$(hostname -i)
+#          sudo bash -c "echo $HOST_IP registry.local >> /etc/hosts"
+#          sudo bash -c "echo '{\"insecure-registries\":[\"registry.local:5000\"]}' >/etc/docker/daemon.json"
+#          sudo bash -c "echo DOCKER_OPTS=\"--config-file=/etc/docker/daemon.json\" >> /etc/default/docker"
+#          sudo systemctl daemon-reload
+#          sudo systemctl restart docker
+#
+#          docker run -d \
+#            --restart=always \
+#            --name registry \
+#            -v /mnt/registry:/var/lib/registry \
+#            -p 5000:5000 \
+#            registry:2
 
-          docker run -d \
-            --restart=always \
-            --name registry \
-            -v /mnt/registry:/var/lib/registry \
-            -p 5000:5000 \
-            registry:2
+      - name: Create kind cluster
+        uses: container-tools/kind-action@v1
+        with:
+          config: .github/workflows/kind/kind.yaml
 
       - name: Build and Push image
         run: |
-          docker build . -t registry.local:5000/openfunction/openfunction:latest -f Dockerfile --build-arg GOPROXY="https://proxy.golang.org"
-          docker push registry.local:5000/openfunction/openfunction:latest
-
-      - name: Create kind cluster
-        uses: helm/kind-action@v1.2.0
-        with:
-          config: .github/workflows/kind/kind.yaml
+          docker build . -t kind-registry:5000/openfunction/openfunction:latest -f Dockerfile --build-arg GOPROXY="https://proxy.golang.org"
+          docker push kind-registry:5000/openfunction/openfunction:latest
 
       - name: Install OpenFunction
         run: |
           chmod +x "${GITHUB_WORKSPACE}/.github/workflows/install.sh"
-          bash "${GITHUB_WORKSPACE}"/.github/workflows/install.sh registry.local:5000/openfunction/openfunction:latest
+          bash "${GITHUB_WORKSPACE}"/.github/workflows/install.sh kind-registry:5000/openfunction/openfunction:latest
 
       - name: Setup Debug Session
         uses: csexton/debugger-action@master
@@ -124,7 +124,7 @@ jobs:
       - name: Test
         run: |
           export TEST_NAMESPACE=default
-          export TEST_IMAGE_REPO=registry.local:5000/openfunction
+          export TEST_IMAGE_REPO=kind-registry:5000/openfunction
           make e2e-test
 
       - name: Output debug info
