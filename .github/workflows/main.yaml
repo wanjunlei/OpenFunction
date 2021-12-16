@@ -97,6 +97,7 @@ jobs:
           HOST_IP=$(hostname -i)
           sudo bash -c "echo $HOST_IP registry.local >> /etc/hosts"
           sudo bash -c "echo '{\"insecure-registries\":[\"registry.local:5000\"]}' >/etc/docker/daemon.json"
+          sudo bash -c "echo DOCKER_OPTS=\"--config-file=/etc/docker/daemon.json\" >> /etc/default/docker"
           sudo systemctl daemon-reload
           sudo systemctl restart docker
 
