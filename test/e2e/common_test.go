@@ -117,6 +117,7 @@ func createFunction(file string) (*openfunction.Function, error) {
 
 	fn.Spec.Image = fn.Spec.Image[strings.LastIndex(fn.Spec.Image, "/"):strings.Index(fn.Spec.Image, ":")]
 	fn.Spec.Image = fmt.Sprintf("%s%s:%s", repo, fn.Spec.Image, tag)
+	fn.Spec.ImageCredentials = nil
 
 	return fn, err
 }
