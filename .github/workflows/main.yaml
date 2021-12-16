@@ -106,7 +106,7 @@ jobs:
           sudo cp certs/domain.crt  /etc/docker/certs.d/registry.local/ca.crt
           NODE_IP=$(kubectl get nodes -o jsonpath={.items[0].status.addresses[0].address})
           sudo bash -c "echo $NODE_IP registry.local >> /etc/hosts"
-          sudo bash -c "echo {"insecure-registries":["registry.local:443"]} >/etc/docker/daemon.json"
+          sudo bash -c "echo '{\"insecure-registries\":[\"registry.local:443\"]}' >/etc/docker/daemon.json"
           sudo systemctl restart docker
 
           docker run -d \
