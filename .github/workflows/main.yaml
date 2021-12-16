@@ -71,6 +71,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     name: E2E Tests
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
     steps:
       - name: Install Go
         uses: actions/setup-go@v2
@@ -100,13 +105,7 @@ jobs:
       - name: Set repository environment
         run: |
           NODE_IP=$(kubectl get nodes -o jsonpath={.items[0].status.addresses[0].address})
-          echo "REPO=$NODE_IP:32168" >> $GITHUB_ENV
-
-      - name: Set docker
-        run: |
-          sudo su
-          sudo echo "{\"insecure-registries\":["\"$REPO\""]}" >/etc/docker/daemon.json
-          sudo systemctl restart docker
+          echo "REPO=$NODE_IP:5000" >> $GITHUB_ENV
 
       - name: Build and Push image
         run: |
