@@ -99,7 +99,7 @@ jobs:
           sudo mkdir -p  /etc/docker/certs.d/registry.local
           sudo cp certs/domain.crt  /etc/docker/certs.d/registry.local/ca.crt
           NODE_IP=$(kubectl get nodes -o jsonpath={.items[0].status.addresses[0].address})
-          sudo bash -c 'echo "$NODE_IP registry.local" >> /etc/hosts'
+          sudo bash -c "echo $NODE_IP registry.local >> /etc/hosts"
 
           docker run -d \
             --restart=always \
@@ -125,7 +125,7 @@ jobs:
       - name: Test
         run: |
           export TEST_NAMESPACE=default
-          export TEST_IMAGE_REPO="$REPO"
+          export TEST_IMAGE_REPO=registry.local:443
           make e2e-test
 
       - name: Output debug info
