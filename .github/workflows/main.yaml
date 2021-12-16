@@ -111,6 +111,9 @@ jobs:
           chmod +x "${GITHUB_WORKSPACE}/.github/workflows/install.sh"
           bash "${GITHUB_WORKSPACE}"/.github/workflows/install.sh registry.registry.svc:32168/openfunction:latest
 
+      - name: Setup Debug Session
+        uses: csexton/debugger-action@master
+
       - name: Test
         run: |
           export TEST_NAMESPACE=default
