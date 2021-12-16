@@ -109,7 +109,7 @@ jobs:
       - name: Install OpenFunction
         run: |
           chmod +x "${GITHUB_WORKSPACE}/.github/workflows/install.sh"
-          bash "${GITHUB_WORKSPACE}"/.github/workflows/install.sh "$NODE_IP":32168/openfunction:latest
+          bash "${GITHUB_WORKSPACE}"/.github/workflows/install.sh registry.registry.svc:32168/openfunction:latest
 
       - name: Test
         run: |
