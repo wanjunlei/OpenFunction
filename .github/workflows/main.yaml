@@ -106,6 +106,8 @@ jobs:
             -v /mnt/registry:/var/lib/registry \
             -p 5000:5000 \
             registry:2
+      - name: Setup Debug Session
+        uses: csexton/debugger-action@master
 
       - name: Build and Push image
         run: |
