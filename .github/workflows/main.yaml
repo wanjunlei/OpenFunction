@@ -94,7 +94,7 @@ jobs:
         run: |
           chmod a+x ./hack/deploy.sh
           ./hack/deploy.sh --all
-#          Remove the resources request to avoid Insufficient CPU error
+          # Remove the resources request to avoid Insufficient CPU error
           kubectl patch deployments.apps -n tekton-pipelines tekton-pipelines-webhook -p '{"spec":{"template":{"spec":{"containers":[{"name":"webhook","resources":null}]}}}}'
           kubectl patch deployments.apps -n knative-serving activator -p '{"spec":{"template":{"spec":{"containers":[{"name":"activator","resources":null}]}}}}'
           kubectl patch deployments.apps -n knative-serving controller -p '{"spec":{"template":{"spec":{"containers":[{"name":"controller","resources":null}]}}}}'
@@ -103,7 +103,7 @@ jobs:
           kubectl patch deployments.apps -n knative-serving webhook -p '{"spec":{"template":{"spec":{"containers":[{"name":"webhook","resources":null}]}}}}'
           kubectl patch deployments.apps -n keda keda-operator -p '{"spec":{"template":{"spec":{"containers":[{"name":"keda-operator","resources":null}]}}}}'
           kubectl patch deployments.apps -n keda keda-metrics-apiserver -p '{"spec":{"template":{"spec":{"containers":[{"name":"keda-metrics-apiserver","resources":null}]}}}}'
-  #       Install kafka
+          # Install kafka
           helm repo add strimzi https://strimzi.io/charts/
           helm install kafka-operator -n default strimzi/strimzi-kafka-operator
           kubectl apply -f config/samples/function-kafka-quick.yaml
@@ -118,6 +118,9 @@ jobs:
           kubectl create -f config/bundle.yaml
           kubectl patch deployments.apps -n openfunction openfunction-controller-manager -p "{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"openfunction\",\"image\":\"kind-registry:5000/openfunction/openfunction:latest\",\"resources\":null}]}}}}"
           kubectl rollout status -n openfunction deployment openfunction-controller-manager --timeout=1m
+
+      - name: Setup Debug Session
+        uses: csexton/debugger-action@master
 
       - name: Test
         run: |
