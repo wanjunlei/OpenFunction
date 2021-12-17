@@ -6,7 +6,7 @@ nodes:
     extraMounts:
       - hostPath: /etc/localtime
         containerPath: /etc/localtime
-      - hostPath: /etc/docker/daemon.json
+      - hostPath: /etc/containerd/config.toml
         containerPath: /etc/docker/daemon.json
     # extraPortMappings:
     # - containerPort: 8080

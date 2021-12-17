@@ -105,8 +105,6 @@ jobs:
 
       - name: Create kind cluster
         uses: container-tools/kind-action@v1
-        with:
-          config: .github/workflows/kind/kind.yaml
 
       - name: Build and Push image
         run: |
