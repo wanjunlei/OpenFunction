@@ -87,24 +87,27 @@ jobs:
         with:
           fetch-depth: 0
 
-#      - name: Install registry
-#        run: |
-#          HOST_IP=$(hostname -i)
-#          sudo bash -c "echo $HOST_IP registry.local >> /etc/hosts"
-#          sudo bash -c "echo '{\"insecure-registries\":[\"registry.local:5000\"]}' >/etc/docker/daemon.json"
-#          sudo bash -c "echo DOCKER_OPTS=\"--config-file=/etc/docker/daemon.json\" >> /etc/default/docker"
-#          sudo systemctl daemon-reload
-#          sudo systemctl restart docker
-#
-#          docker run -d \
-#            --restart=always \
-#            --name registry \
-#            -v /mnt/registry:/var/lib/registry \
-#            -p 5000:5000 \
-#            registry:2
-
       - name: Create kind cluster
         uses: container-tools/kind-action@v1
+
+      - name: Install dependent components
+        run: |
+          chmod a+x ./hack/deploy.sh
+          ./hack/deploy.sh --all
+#          Remove the resources request to avoid Insufficient CPU error
+          kubectl patch deployments.apps -n tekton-pipelines tekton-pipelines-webhook -p '{"spec":{"template":{"spec":{"containers":[{"name":"webhook","resources":null}]}}}}'
+          kubectl patch deployments.apps -n knative-serving activator -p '{"spec":{"template":{"spec":{"containers":[{"name":"activator","resources":null}]}}}}'
+          kubectl patch deployments.apps -n knative-serving controller -p '{"spec":{"template":{"spec":{"containers":[{"name":"controller","resources":null}]}}}}'
+          kubectl patch deployments.apps -n knative-serving autoscaler -p '{"spec":{"template":{"spec":{"containers":[{"name":"autoscaler","resources":null}]}}}}'
+          kubectl patch deployments.apps -n knative-serving domainmapping-webhook -p '{"spec":{"template":{"spec":{"containers":[{"name":"domainmapping-webhook","resources":null}]}}}}'
+          kubectl patch deployments.apps -n knative-serving webhook -p '{"spec":{"template":{"spec":{"containers":[{"name":"webhook","resources":null}]}}}}'
+          kubectl patch deployments.apps -n keda keda-operator -p '{"spec":{"template":{"spec":{"containers":[{"name":"keda-operator","resources":null}]}}}}'
+          kubectl patch deployments.apps -n keda keda-metrics-apiserver -p '{"spec":{"template":{"spec":{"containers":[{"name":"keda-metrics-apiserver","resources":null}]}}}}'
+  
+  #      Install kafka
+         helm repo add strimzi https://strimzi.io/charts/
+         helm install kafka-operator -n default strimzi/strimzi-kafka-operator
+         kubectl apply -f config/samples/function-kafka-quick.yaml
 
       - name: Build and Push image
         run: |
@@ -113,11 +116,9 @@ jobs:
 
       - name: Install OpenFunction
         run: |
-          chmod +x "${GITHUB_WORKSPACE}/.github/workflows/install.sh"
-          bash "${GITHUB_WORKSPACE}"/.github/workflows/install.sh kind-registry:5000/openfunction/openfunction:latest
-
-      - name: Setup Debug Session
-        uses: csexton/debugger-action@master
+          kubectl create -f config/bundle.yaml
+          kubectl patch deployments.apps -n openfunction openfunction-controller-manager -p "{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"openfunction\",\"image\":\"kind-registry:5000/openfunction/openfunction:latest\",\"resources\":null}]}}}}"
+          kubectl rollout status -n openfunction deployment openfunction-controller-manager --timeout=1m
 
       - name: Test
         run: |
