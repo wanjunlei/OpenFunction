@@ -1,0 +1,46 @@
+name: WorkFlow to publish image when pr megerd
+
+on:
+  push:
+    branches:
+      - 'main'
+    tags:
+      - 'v*'
+    paths:
+      - '.github/workflows/**'
+      - 'apis/**'
+      - 'config/bundle.yaml'
+      - 'controllers/**'
+      - 'hack/delete.sh'
+      - 'hack/deploy.sh'
+      - 'pkg/**'
+      - 'Dockerfile'
+      - 'main.go'
+      - 'Makefile'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    name: Publish Image
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16.x
+
+      - uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Build and Push image
+        run: |
+          tag=$(echo VERSION)
+          docker build . -t leiwanjun/openfunction:$tag -f Dockerfile --build-arg GOPROXY="https://proxy.golang.org"
+          docker push leiwanjun/openfunction:$tag
