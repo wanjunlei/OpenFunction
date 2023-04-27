@@ -21,10 +21,13 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"reflect"
 	"sort"
 	"strings"
 	"text/template"
 	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/event"
 
 	kservingv1 "knative.dev/serving/pkg/apis/serving/v1"
 
@@ -651,6 +654,14 @@ func (r *FunctionReconciler) needToCreateServing(fn *openfunction.Function) bool
 		return false
 	}
 
+	if fn.Spec.Build != nil {
+		if fn.Status.Build.State != openfunction.Succeeded &&
+			fn.Status.Build.State != openfunction.Skipped {
+			log.V(1).Info("Rebuild not completed")
+			return false
+		}
+	}
+
 	oldHash := fn.Status.Serving.ResourceHash
 	oldName := fn.Status.Serving.ResourceRef
 	// Serving had not created, need to create.
@@ -1097,13 +1108,39 @@ func (r *FunctionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&openfunction.Builder{}).
 		Owns(&openfunction.Serving{}).
 		Owns(&corev1.Service{}).
-		Owns(&k8sgatewayapiv1alpha2.HTTPRoute{}).
+		Owns(&k8sgatewayapiv1alpha2.HTTPRoute{},
+			ctrlbuilder.WithPredicates(predicate.Funcs{UpdateFunc: r.filterHttpRouteUpdateEvent})).
 		Watches(
 			&source.Kind{Type: &networkingv1alpha1.Gateway{}},
 			handler.EnqueueRequestsFromMapFunc(r.findObjectsForGateway),
 			ctrlbuilder.WithPredicates(predicate.GenerationChangedPredicate{}),
 		).
 		Complete(r)
+}
+
+// filterHttpRouterUpdateEvent will skip update events that only status changed.
+func (r *FunctionReconciler) filterHttpRouteUpdateEvent(e event.UpdateEvent) bool {
+	if e.ObjectOld == nil || e.ObjectNew == nil {
+		return false
+	}
+
+	oldRoute := e.ObjectOld.(*k8sgatewayapiv1alpha2.HTTPRoute).DeepCopy()
+	newRoute := e.ObjectNew.(*k8sgatewayapiv1alpha2.HTTPRoute).DeepCopy()
+
+	oldRoute.ObjectMeta.ResourceVersion = ""
+	oldRoute.ObjectMeta.ManagedFields = nil
+	newRoute.ObjectMeta.ResourceVersion = ""
+	newRoute.ObjectMeta.ManagedFields = nil
+
+	if !reflect.DeepEqual(oldRoute.Spec, newRoute.Spec) {
+		return true
+	}
+
+	if !reflect.DeepEqual(oldRoute.ObjectMeta, newRoute.ObjectMeta) {
+		return true
+	}
+
+	return false
 }
 
 func (r *FunctionReconciler) findObjectsForGateway(gateway client.Object) []reconcile.Request {

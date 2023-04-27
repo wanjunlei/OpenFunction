@@ -81,6 +81,7 @@ func main() {
 	opts := zap.Options{
 		Development:     true,
 		StacktraceLevel: zapcore.PanicLevel,
+		TimeEncoder:     zapcore.RFC3339TimeEncoder,
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()

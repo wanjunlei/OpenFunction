@@ -20,7 +20,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
+
+	"sigs.k8s.io/controller-runtime/pkg/event"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -511,14 +514,59 @@ func (r *GatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&networkingv1alpha1.Gateway{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		For(&networkingv1alpha1.Gateway{},
+			builder.WithPredicates(predicate.GenerationChangedPredicate{}, r.filterGatewayUpdateEvent())).
 		Owns(&corev1.Service{}).
 		Watches(
 			&source.Kind{Type: &k8sgatewayapiv1alpha2.Gateway{}},
 			handler.EnqueueRequestsFromMapFunc(r.findObjectsForK8sGateway),
-			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
+			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}, r.filterGatewayUpdateEvent()),
 		).
 		Complete(r)
+}
+
+// filterGatewayUpdateEvent will skip update events that only status changed.
+func (r *GatewayReconciler) filterGatewayUpdateEvent() predicate.Predicate {
+	return predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			if e.ObjectOld == nil || e.ObjectNew == nil {
+				return false
+			}
+
+			var newMetadata, oldMetadata *metav1.ObjectMeta
+			var newSpec, oldSpec interface{}
+			switch e.ObjectOld.(type) {
+			case *networkingv1alpha1.Gateway:
+				gateway := e.ObjectOld.(*networkingv1alpha1.Gateway)
+				oldMetadata = gateway.ObjectMeta.DeepCopy()
+				oldSpec = gateway.Spec
+				newMetadata = gateway.ObjectMeta.DeepCopy()
+				newSpec = gateway.Spec
+			case *k8sgatewayapiv1alpha2.Gateway:
+				gateway := e.ObjectOld.(*k8sgatewayapiv1alpha2.Gateway)
+				oldMetadata = gateway.ObjectMeta.DeepCopy()
+				oldSpec = gateway.Spec
+				newMetadata = gateway.ObjectMeta.DeepCopy()
+				newSpec = gateway.Spec
+			default:
+				return false
+			}
+
+			if !reflect.DeepEqual(oldSpec, newSpec) {
+				return true
+			}
+
+			oldMetadata.SetResourceVersion("")
+			newMetadata.SetResourceVersion("")
+			oldMetadata.SetManagedFields(nil)
+			newMetadata.SetManagedFields(nil)
+			if !reflect.DeepEqual(oldMetadata, newMetadata) {
+				return true
+			}
+
+			return false
+		},
+	}
 }
 
 func (r *GatewayReconciler) findObjectsForK8sGateway(k8sGateway client.Object) []reconcile.Request {
