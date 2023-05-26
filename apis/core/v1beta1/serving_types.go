@@ -36,6 +36,8 @@ const (
 	WorkloadTypeJob         = "Job"
 	WorkloadTypeStatefulSet = "StatefulSet"
 	WorkloadTypeDeployment  = "Deployment"
+
+	knativeGroupName = "autoscaling.knative.dev"
 )
 
 // Runtime describes the type of the backend runtime.

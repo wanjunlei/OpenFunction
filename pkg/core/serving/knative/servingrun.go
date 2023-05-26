@@ -35,6 +35,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	openfunctionv1beta1 "github.com/openfunction/apis/core/v1beta1"
 	openfunction "github.com/openfunction/apis/core/v1beta2"
 	"github.com/openfunction/pkg/constants"
 	"github.com/openfunction/pkg/core"
@@ -221,15 +222,18 @@ func (r *servingRun) createService(s *openfunction.Serving, cm map[string]string
 			s.Spec.Annotations = map[string]string{}
 		}
 
+		if s.Spec.ScaleOptions.Knative != nil {
+			as := openfunctionv1beta1.ConvertKnativeScaleOptionsTo(s.Spec.ScaleOptions.Knative)
+			if as != nil {
+				s.Spec.Annotations = util.AppendLabels(s.Spec.Annotations, *as)
+			}
+		}
+
 		if s.Spec.ScaleOptions.MaxReplicas != nil {
 			maxScale = strconv.Itoa(int(*s.Spec.ScaleOptions.MaxReplicas))
 		}
 		if s.Spec.ScaleOptions.MinReplicas != nil {
 			minScale = strconv.Itoa(int(*s.Spec.ScaleOptions.MinReplicas))
-		}
-
-		if s.Spec.ScaleOptions.Knative != nil {
-			s.Spec.Annotations = util.AppendLabels(s.Spec.Annotations, *s.Spec.ScaleOptions.Knative)
 		}
 
 		if maxScale != "" {

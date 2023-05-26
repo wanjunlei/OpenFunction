@@ -227,7 +227,7 @@ func (src *Function) convertServingTo(dst *v1beta2.Function) error {
 		dst.Spec.Serving.ScaleOptions = &v1beta2.ScaleOptions{
 			MaxReplicas: src.Spec.Serving.ScaleOptions.MaxReplicas,
 			MinReplicas: src.Spec.Serving.ScaleOptions.MinReplicas,
-			Knative:     src.Spec.Serving.ScaleOptions.Knative,
+			Knative:     ConvertKnativeScaleOptionsFrom(src.Spec.Serving.ScaleOptions.Knative),
 		}
 
 		if src.Spec.Serving.ScaleOptions.Keda != nil {
@@ -548,7 +548,7 @@ func (dst *Function) convertServingFrom(src *v1beta2.Function) error {
 		dst.Spec.Serving.ScaleOptions = &ScaleOptions{
 			MaxReplicas: src.Spec.Serving.ScaleOptions.MaxReplicas,
 			MinReplicas: src.Spec.Serving.ScaleOptions.MinReplicas,
-			Knative:     src.Spec.Serving.ScaleOptions.Knative,
+			Knative:     ConvertKnativeScaleOptionsTo(src.Spec.Serving.ScaleOptions.Knative),
 		}
 		if src.Spec.Serving.ScaleOptions.Keda != nil {
 			dst.Spec.Serving.ScaleOptions.Keda = &KedaScaleOptions{}

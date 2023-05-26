@@ -20,6 +20,10 @@ package v1beta1
    standard packages.
 */
 import (
+	"strconv"
+	"strings"
+	"time"
+
 	componentsv1alpha1 "github.com/dapr/dapr/pkg/apis/components/v1alpha1"
 	"gopkg.in/yaml.v3"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
@@ -87,7 +91,7 @@ func (src *Serving) ConvertTo(dstRaw conversion.Hub) error {
 		dst.Spec.ScaleOptions = &v1beta2.ScaleOptions{
 			MaxReplicas: src.Spec.ScaleOptions.MaxReplicas,
 			MinReplicas: src.Spec.ScaleOptions.MinReplicas,
-			Knative:     src.Spec.ScaleOptions.Knative,
+			Knative:     ConvertKnativeScaleOptionsFrom(src.Spec.ScaleOptions.Knative),
 		}
 		if src.Spec.ScaleOptions.Keda != nil &&
 			src.Spec.ScaleOptions.Keda.ScaledObject != nil {
@@ -254,7 +258,7 @@ func (dst *Serving) ConvertFrom(srcRaw conversion.Hub) error {
 		dst.Spec.ScaleOptions = &ScaleOptions{
 			MaxReplicas: src.Spec.ScaleOptions.MaxReplicas,
 			MinReplicas: src.Spec.ScaleOptions.MinReplicas,
-			Knative:     src.Spec.ScaleOptions.Knative,
+			Knative:     ConvertKnativeScaleOptionsTo(src.Spec.ScaleOptions.Knative),
 		}
 		if src.Spec.ScaleOptions.Keda != nil {
 			dst.Spec.ScaleOptions.Keda = &KedaScaleOptions{}
@@ -345,4 +349,102 @@ func (dst *Serving) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Status.Phase = src.Status.Phase
 	dst.Status.ResourceRef = src.Status.ResourceRef
 	return nil
+}
+
+func ConvertKnativeScaleOptionsFrom(annotations *map[string]string) *v1beta2.KnativeScaleOptions {
+	if annotations == nil || len(*annotations) == 0 {
+		return nil
+	}
+
+	knative := &v1beta2.KnativeScaleOptions{
+		Annotations: make(map[string]string),
+	}
+
+	for k, v := range *annotations {
+		if !strings.HasPrefix(k, knativeGroupName) {
+			knative.Annotations[k] = v
+			continue
+		}
+
+		name := strings.TrimPrefix(k, knativeGroupName)
+		switch name {
+		case "/class":
+			knative.Class = v
+		case "/initial-scale":
+			if n, err := strconv.Atoi(v); err == nil {
+				knative.InitialScale = n
+			}
+		case "/scale-down-delay":
+			if d, err := time.ParseDuration(v); err == nil {
+				knative.ScaleDownDelay = d
+			}
+		case "/metric":
+			knative.Metric = v
+		case "/target":
+			knative.Target = v
+		case "/scale-to-zero-pod-retention-period":
+			if d, err := time.ParseDuration(v); err == nil {
+				knative.ScaleToZeroPodRetentionPeriod = d
+			}
+		case "/window":
+			if d, err := time.ParseDuration(v); err == nil {
+				knative.Window = d
+			}
+		default:
+			knative.Annotations[k] = v
+		}
+	}
+
+	if len(knative.Annotations) == 0 {
+		knative.Annotations = nil
+	}
+
+	return knative
+}
+
+func ConvertKnativeScaleOptionsTo(knative *v1beta2.KnativeScaleOptions) *map[string]string {
+	if knative == nil {
+		return nil
+	}
+
+	annotations := make(map[string]string)
+	if knative.Annotations != nil {
+		for k, v := range knative.Annotations {
+			annotations[k] = v
+		}
+	}
+
+	if knative.Class != "" {
+		annotations[knativeGroupName+"/class"] = knative.Class
+	}
+
+	if knative.InitialScale != 0 {
+		annotations[knativeGroupName+"/initial-scale"] = string(rune(knative.InitialScale))
+	}
+
+	if knative.ScaleDownDelay != 0 {
+		annotations[knativeGroupName+"/scale-down-delay"] = knative.ScaleDownDelay.String()
+	}
+
+	if knative.Metric != "" {
+		annotations[knativeGroupName+"/metric"] = knative.Metric
+	}
+
+	if knative.Target != "" {
+		annotations[knativeGroupName+"/target"] = knative.Target
+	}
+
+	if knative.ScaleToZeroPodRetentionPeriod != 0 {
+		annotations[knativeGroupName+"/scale-to-zero-pod-retention-period"] = knative.ScaleToZeroPodRetentionPeriod.String()
+	}
+
+	if knative.Window != 0 {
+		annotations[knativeGroupName+"/window"] = knative.Window.String()
+	}
+
+	if len(annotations) == 0 {
+		return nil
+	}
+
+	return &annotations
 }

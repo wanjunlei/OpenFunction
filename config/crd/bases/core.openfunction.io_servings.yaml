@@ -3731,8 +3731,28 @@ spec:
                         type: array
                     type: object
                   knative:
-                    additionalProperties:
-                      type: string
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      class:
+                        type: string
+                      initialScale:
+                        type: integer
+                      metric:
+                        type: string
+                      scaleDownDelay:
+                        format: int64
+                        type: integer
+                      scaleToZeroPodRetentionPeriod:
+                        format: int64
+                        type: integer
+                      target:
+                        type: string
+                      window:
+                        format: int64
+                        type: integer
                     type: object
                   maxReplicas:
                     format: int32

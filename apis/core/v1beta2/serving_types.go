@@ -17,6 +17,8 @@ limitations under the License.
 package v1beta2
 
 import (
+	"time"
+
 	componentsv1alpha1 "github.com/dapr/dapr/pkg/apis/components/v1alpha1"
 	kedav1alpha1 "github.com/kedacore/keda/v2/api/v1alpha1"
 	v1 "k8s.io/api/core/v1"
@@ -130,6 +132,38 @@ type KedaScaleOptions struct {
 	Triggers []kedav1alpha1.ScaleTriggers `json:"triggers,omitempty"`
 }
 
+type KnativeScaleOptions struct {
+	// Class is the explicit class of autoscaler that a particular resource has opted into.
+	// Possible values: "kpa.autoscaling.knative.dev" or "hpa.autoscaling.knative.dev".
+	Class string `json:"class,omitempty"`
+	// InitialScale specify the initial scale of a revision when a service is initially deployed.
+	InitialScale int `json:"initialScale,omitempty"`
+	// ScaleDownDelay specify a scale down delay.
+	ScaleDownDelay time.Duration `json:"scaleDownDelay,omitempty"`
+	// Metric specify what metric the PodAutoscaler should be scaled on. For example.
+	// Possible values: "concurrency", "rps", "cpu", "memory" or any custom metric name,
+	// depending on your Autoscaler type.
+	// The "cpu", "memory", and "custom" metrics are only supported on revisions that use the HPA class.
+	Metric string `json:"metric,omitempty"`
+	// Target specify what metric value the PodAutoscaler should attempt to maintain.
+	//  For example,
+	//   metric: cpu
+	//   target: "75"   # target 75% cpu utilization
+	// Or
+	//   metric: memory
+	//   target: "100"   # target 100MiB memory usage
+	Target string `json:"target,omitempty"`
+	// ScaleToZeroPodRetentionPeriod specify the minimum
+	// time duration the last pod will not be scaled down, after autoscaler has
+	// made the decision to scale to 0.
+	ScaleToZeroPodRetentionPeriod time.Duration `json:"scaleToZeroPodRetentionPeriod,omitempty"`
+	// Window specify the time interval over which to calculate the average metric.
+	// Only the kpa.autoscaling.knative.dev class autoscaler supports the window annotation.
+	Window time.Duration `json:"window,omitempty"`
+	// annotations about the automatic scaling.
+	Annotations map[string]string `json:"annotations,omitempty"`
+}
+
 type ScaleOptions struct {
 	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
@@ -138,7 +172,7 @@ type ScaleOptions struct {
 	// Refer to https://knative.dev/docs/serving/autoscaling/ to
 	// learn more about the autoscaling options of Knative Serving.
 	// +optional
-	Knative *map[string]string `json:"knative,omitempty"`
+	Knative *KnativeScaleOptions `json:"knative,omitempty"`
 }
 
 type Hooks struct {
